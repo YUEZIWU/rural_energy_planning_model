@@ -1,0 +1,95 @@
+# Model run parameters
+data_dir: './data_uploads'
+fixed_load_dir: 'fixed_load_ts'
+results_dir: './model_results'
+
+# region number
+region_no: 0 # select the sample regions with different inputs
+# scenario binary & technology availability
+diesel_vali_cond: False
+solar_ava: True
+battery_la_ava: True
+battery_li_ava: False
+diesel_ava: True
+
+# general model assumptions
+irrgation_area_ratio: 1
+num_year_cap: 0.024658
+num_year_ope: 0.246575
+num_hour_cap: 216
+num_hour_ope: 2160
+num_year_fixed_load: 1
+num_hour_fixed_load: 8760
+i_rate: 0.128
+
+# farmer data
+sf_land_area: [10e3] #[5000, 10e3, 20e3, 30e3, 40e3, 50e3, 60e3, 70e3, 80e3, 90e3, 100e3, 110e3, 120e3, 130e3, 140e3, 150e3, 160e3, 170e3, 180e3, 190e3, 200e3, 210e3, 220e3, 230e3, 240e3, 250e3, 260e3, 270e3, 280e3] #[5000, 10e3, 20e3, 30e3, 40e3, 50e3, 60e3, 70e3, 80e3, 90e3, 100e3]
+dome_load_rate: 2     # 2kWh/ha/day or 4 kWh/ha/day
+
+# Solar
+solar_pw_cap_kw:  [0,5,   10,   50,   250,  1000, 2000]
+solar_pw_cost_kw: [0,6680,11450,44550,183e3,573e3, 1146e3]
+solar_single_cost_kw: 1000
+annualize_years_solar: 15
+solar_min_cap: 0.2
+#solar_ds_perc: 0.50
+
+# Battery. lc: lead-acid; li: li-ion.
+battery_la_cost_kwh: 181
+battery_la_eff: 0.894             # round way efficiency 80%
+battery_la_min_soc: 0.4
+annualize_years_battery_la: 5
+battery_li_cost_kwh: 461   # low assumption as 150
+battery_li_eff: 0.949             # round way efficiency 80%
+battery_li_min_soc: 0.1
+annualize_years_battery_li: 10
+battery_start_level: 0.5
+
+battery_inverter_cost_kw: 173
+annualize_years_battery_inverter: 10
+battery_la_p2e_ratio_range: [0.25, 0.25]
+battery_li_p2e_ratio_range: [0.25, 0.25]   # seperate iverter for la, li here
+nominal_charge_discharge_cost_kwh: 0.001
+
+# Diesel
+diesel_cap_cost_kw: 808
+diesel_cost_liter: 1
+diesel_min_cap: 1
+liter_per_kwh: 0.094634 # diesel fuel energy density
+reserve_req: 1          # ignore the reserve capacity
+diesel_eff: 0.3
+annualize_years_diesel: 10
+
+# transmission
+trans_lv_cost_kw_m: 8.45
+trans_mv_cost_kw_m: 16
+annualize_years_trans: 15
+transformer_cost: 5000
+dist_lv_m_per_ha: 150
+
+# commercial load costs
+com_nominal_cost: 0.001
+no_com_hours: [0,1,20,21,22,23] # during these hours, there are no irrigation local time 11:30pm-4:30am
+
+# Flexible load & pumps
+irrigation_minimum_power: 1 # Minimum operation power is 1 kW
+irrigation_maximum_power: 9999
+#pump_power: 1 # each pump is 1 kw
+first_season_start:  0    #
+first_season_end:    29   # , which should be included in the season
+second_season_start: 30   #
+second_season_end:   59   #
+no_irrigation_hours: [0,19,20,21,22,23]  # during these hours, there are no irrigation local time 10:30pm-3:30am
+water_demand_kg_m2_day: 7  # 7 mm / m2*day
+water_account_days: 3      # any 3-day period, water should be enough
+irrigation_kwh_p_kg: 0.000227
+
+irrigation_nominal_cost: 0.001
+nominal_water_level:     0.0000
+nominal_water_discharge: 0.0001
+irrigation_load_startup_cost: 0.000
+
+# Gurobi solver parameters
+feasibility_tol: 0.001
+optimality_tol: 0.001
+solver_method: -1
