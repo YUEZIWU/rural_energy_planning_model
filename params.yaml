@@ -24,7 +24,9 @@ i_rate: 0.128
 
 # farmer data
 sf_land_area: [10e3] #[5000, 10e3, 20e3, 30e3, 40e3, 50e3, 60e3, 70e3, 80e3, 90e3, 100e3, 110e3, 120e3, 130e3, 140e3, 150e3, 160e3, 170e3, 180e3, 190e3, 200e3, 210e3, 220e3, 230e3, 240e3, 250e3, 260e3, 270e3, 280e3] #[5000, 10e3, 20e3, 30e3, 40e3, 50e3, 60e3, 70e3, 80e3, 90e3, 100e3]
-dome_load_rate: 2     # 2kWh/ha/day or 4 kWh/ha/day
+dome_load_rate: 1     # each customer uses how many times of the input time series
+                      # 2kWh/ha/day or 4 kWh/ha/day # this is a old parameter
+
 
 # Solar
 solar_pw_cap_kw:  [0,5,   10,   50,   250,  1000, 2000]
@@ -61,25 +63,26 @@ diesel_eff: 0.3
 annualize_years_diesel: 10
 
 # transmission
-trans_lv_cost_kw_m: 8.45
-trans_mv_cost_kw_m: 16
-annualize_years_trans: 15
-transformer_cost: 5000
+dist_lv_cost_m: 10 #8.45
+dist_mv_cost_m: 25 #16
+annualize_years_dist: 15
+transformer_cost: 2000 #5000
+meter_cost: 200
 dist_lv_m_per_ha: 150
 
 # commercial load costs
 com_nominal_cost: 0.001
-no_com_hours: [0,1,20,21,22,23] # during these hours, there are no irrigation local time 11:30pm-4:30am
+no_com_hours: [0,1,2,3,4,17,18,19,20,21,22,23]  # during these hours, there are no commercial load local time 8:30pm-7:30am
 
 # Flexible load & pumps
 irrigation_minimum_power: 1 # Minimum operation power is 1 kW
 irrigation_maximum_power: 9999
 #pump_power: 1 # each pump is 1 kw
 first_season_start:  0    #
-first_season_end:    29   # , which should be included in the season
+first_season_end:    29   # which should be included in the season
 second_season_start: 30   #
 second_season_end:   59   #
-no_irrigation_hours: [0,19,20,21,22,23]  # during these hours, there are no irrigation local time 10:30pm-3:30am
+no_irrigation_hours: [0,1,17,18,19,20,21,22,23]  # during these hours, there are no irrigation local time 8:30pm-4:30am
 water_demand_kg_m2_day: 7  # 7 mm / m2*day
 water_account_days: 3      # any 3-day period, water should be enough
 irrigation_kwh_p_kg: 0.000227

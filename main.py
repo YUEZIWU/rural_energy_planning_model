@@ -18,7 +18,7 @@ if __name__ == '__main__':
             scenario_name = "Paloga-" + str(config) + '-fixed-load'
             create_fix_load_model(args, config)
         else:
-            scenario_name = "Paloga-" + str(config) + '-flex-load'
+            scenario_name = "Test-" + str(config) + '-20230406-2'
             nodes_capacity_results = create_capacity_model(args, config)
             create_operation_model(args, nodes_capacity_results, scenario_name, config)
 

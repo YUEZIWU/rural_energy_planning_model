@@ -35,19 +35,19 @@ def create_capacity_model(args, config):
 
         if config == 1:
             irrigation_area_m2 = nodal_load_input["irrigation_area_ha"][i] * 1e4
-            dome_load = dome_load_hourly_kw / 100 * nodal_load_input["domestic_load_kwh_day"][i]
+            dome_load = dome_load_hourly_kw * nodal_load_input["domestic_load_customers_no"][i]
             com_power = np.array([nodal_load_input["com_power_kw"][i]])
             com_peak_hours = np.array([nodal_load_input["com_wk_hours_per_day"][i]])
         elif config == 2:
             irrigation_area_m2 = np.sum(nodal_load_input["irrigation_area_ha"]) * 1e4
-            dome_load = dome_load_hourly_kw / 100 * np.sum(nodal_load_input["domestic_load_kwh_day"])
+            dome_load = dome_load_hourly_kw * np.sum(nodal_load_input["domestic_load_customers_no"])
             ### should be updated later ###
             com_power_full = np.array(nodal_load_input["com_power_kw"])
             com_peak_hours_full = np.array(nodal_load_input["com_wk_hours_per_day"])
             no_com_true = com_power_full * com_peak_hours_full
             com_power = com_power_full[no_com_true > 0]
             com_peak_hours = com_peak_hours_full[no_com_true > 0]
-            print(irrigation_area_m2, np.sum(nodal_load_input["domestic_load_kwh_day"]), com_power, com_peak_hours)
+            print(irrigation_area_m2, np.sum(nodal_load_input["domestic_load_customers_no"]), com_power, com_peak_hours)
         # elif config == 3:
         else:
             print("Error - wrong config")

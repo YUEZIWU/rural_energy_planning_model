@@ -73,12 +73,12 @@ def get_cap_cost(args, years):
 def load_timeseries(args, mod_level):
     # Load solar & load time series, all region use the same
     if mod_level == "cap":
-        solar_po_hourly   = np.array(pd.read_csv(f'{args.data_dir}/solar_po_2014_2015_33.csv', index_col=0))[:,0]
-        rain_rate_daily_mm_m2 = np.array(pd.read_csv(f'{args.data_dir}/rain_rate_mm_2014_2015_33.csv', index_col=0))[:,0]
+        solar_po_hourly   = np.array(pd.read_csv(f'{args.data_dir}/solar_po_2019_33d.csv', index_col=0))[:,0]
+        rain_rate_daily_mm_m2 = np.array(pd.read_csv(f'{args.data_dir}/rain_rate_mm_2014_2015_33d.csv', index_col=0))[:,0]
     if mod_level == "ope":
-        solar_po_hourly   = np.array(pd.read_csv(f'{args.data_dir}/solar_po_2014_2015_3m.csv', index_col=0))[:,0]
+        solar_po_hourly   = np.array(pd.read_csv(f'{args.data_dir}/solar_po_2019_3m.csv', index_col=0))[:,0]
         rain_rate_daily_mm_m2 = np.array(pd.read_csv(f'{args.data_dir}/rain_rate_mm_2014_2015_3m.csv', index_col=0))[:,0]
-    fix_load_hourly_kw = np.array(pd.read_csv(f'{args.data_dir}/fixed_load_kw.csv', index_col=0))[:,0]
+    fix_load_hourly_kw = np.array(pd.read_csv(f'{args.data_dir}/domestic_load_kw.csv', index_col=0))[:,0]
     return fix_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2
 
 # def read_irrigation_area(args):
@@ -88,13 +88,14 @@ def load_timeseries(args, mod_level):
 
 def get_connection_info(args):
     # transmission connection is pre-solved with TLND model
-    f = open(os.path.join(args.data_dir,'test1_modelOutput.txt'),'r')
+    f = open(os.path.join(args.data_dir,'tlnd_modelOutput.txt'),'r')
     tx_f = f.read()
     lv_length = float(re.search(r'LVLength:(.*?)\n',tx_f).group(1))
     mv_length = float(re.search(r'MVLength:(.*?)\n',tx_f).group(1))
     tx_num    = float(re.search(r'Num Transformers:(.*?)\n',tx_f).group(1))
+    meter_num = float(re.search(r'NumStructures:(.*?)\n',tx_f).group(1))
     print("connection info", lv_length, mv_length, tx_num)
-    return lv_length, mv_length, tx_num
+    return lv_length, mv_length, tx_num, meter_num
 
 
 

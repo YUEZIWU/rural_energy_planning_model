@@ -11,9 +11,9 @@ def node_results_retrieval(args, m, i, T, nodal_load_input, config):
     elif T == 2160:
         dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
     if config == 1:
-        dome_load = dome_load_hourly_kw / 100 * nodal_load_input["domestic_load_kwh_day"][i]
+        dome_load = dome_load_hourly_kw * nodal_load_input["domestic_load_customers_no"][i]
     elif config == 2:
-        dome_load = dome_load_hourly_kw / 100 * np.sum(nodal_load_input["domestic_load_kwh_day"])
+        dome_load = dome_load_hourly_kw * np.sum(nodal_load_input["domestic_load_customers_no"])
 
     node_df = pd.DataFrame()
     node_df['node_id'] = [i]
@@ -69,7 +69,7 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     T = args.num_hour_ope
     #num_nodes, irrigation_area_m2 = get_nodes_area(args, sce_sf_area_m2)
     dome_load_hourly_kw, solar_pot_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
-    lv_connect_len, mv_connect_len, tx_num, total_tx_cost = tx_results(args, config)
+    lv_connect_len, mv_connect_len, tx_num, meter_num, total_tx_cost = tx_results(args, config)
 
     nodal_load_input = get_nodal_inputs(args)
     if config == 1:
@@ -77,7 +77,7 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     elif config == 2 or config == 3:
         num_nodes = 1
     irrigation_area_m2 = np.sum(nodal_load_input["irrigation_area_ha"]) * 1e4
-    dome_load = dome_load_hourly_kw / 100 * np.sum(nodal_load_input["domestic_load_kwh_day"])
+    # dome_load = dome_load_hourly_kw / 100 * np.sum(nodal_load_input["domestic_load_kwh_day"])
 
     # Calculate demand, generation, solar uncurtailed/actual CF
     avg_total_demand     = np.mean(system_ts_results.domestic_load_kw) + \
@@ -121,7 +121,7 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
 
     data_for_export['solar_cap_kw'] = [np.sum(nodes_results.solar_cap_kw)]
     data_for_export['diesel_cap_kw'] = [np.sum(nodes_results.diesel_cap_kw)]
-    data_for_export['diesel_cap_kw_in_ds_model'] = [np.sum(nodes_capacity_results.diesel_cap_kw)]
+    data_for_export['diesel_cap_kw_in_1st_model'] = [np.sum(nodes_capacity_results.diesel_cap_kw)]
     data_for_export['battery_la_energy_cap_kwh'] = [np.sum(nodes_results.batt_la_energy_cap_kwh)]
     data_for_export['battery_la_power_cap_kw']   = [np.sum(nodes_results.batt_la_power_cap_kw)]
     data_for_export['battery_li_energy_cap_kwh'] = [np.sum(nodes_results.batt_li_energy_cap_kwh)]
@@ -157,16 +157,17 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
 def tx_results(args, config):
     # connection wire
     if config == 1:
-        lv_connect_len, mv_connect_len, tx_num = 0, 0, 0
-    elif config == 2:
-        lv_connect_len, mv_connect_len, tx_num = get_connection_info(args)
+        lv_connect_len, mv_connect_len, tx_num, meter_num = 0, 0, 0, 0
+    elif config >= 2:
+        lv_connect_len, mv_connect_len, tx_num, meter_num = get_connection_info(args)
     else:
-        lv_connect_len, mv_connect_len, tx_num = 0, 0, 0
+        lv_connect_len, mv_connect_len, tx_num, meter_num = 0, 0, 0, 0
 
-    tx_ann_rate = annualization_rate(args.i_rate, args.annualize_years_trans)
-    total_tx_cost = args.num_year_ope * tx_ann_rate * ((lv_connect_len) * float(args.trans_lv_cost_kw_m) +
-                                                   mv_connect_len * float(args.trans_mv_cost_kw_m) +
-                                                   tx_num * float(args.transformer_cost))
-    return lv_connect_len, mv_connect_len, tx_num, total_tx_cost
+    tx_ann_rate = annualization_rate(args.i_rate, args.annualize_years_dist)
+    total_tx_cost = args.num_year_ope * tx_ann_rate * (lv_connect_len * float(args.dist_lv_cost_m) +
+                                                       mv_connect_len * float(args.dist_mv_cost_m) +
+                                                       tx_num * float(args.transformer_cost) +
+                                                       meter_num * float(args.meter_cost))
+    return lv_connect_len, mv_connect_len, tx_num, meter_num, total_tx_cost
 
 

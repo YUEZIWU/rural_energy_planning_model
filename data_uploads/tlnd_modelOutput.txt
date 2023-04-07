@@ -1,0 +1,13 @@
+NumStructures:49
+LVLength:2602.9604160724975
+LVPerCustomer:53.121641144336685
+MVLength:0
+MVPerCustomer:0.0
+Num Transformers:1
+Customers Per Tx:49.0
+Total LV Cost:26029.604160724975
+Total MV Cost:0
+Transformer Cost:2000
+Total Cost:28029.604160724975
+Total Running Time:31.697890043258667
+Final Running Time:31.6978919506073
