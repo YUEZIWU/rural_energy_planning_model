@@ -18,7 +18,7 @@ def get_args():
     return args
 
 def get_nodal_inputs(args):
-    nodal_load_input   = pd.read_excel(f'{args.data_dir}/nodes_inputs.xlsx')
+    nodal_load_input   = pd.read_excel(f'{args.data_dir}/nodes_pue_irri_inputs.xlsx')
     return nodal_load_input
 
 def get_fixed_load(args):
