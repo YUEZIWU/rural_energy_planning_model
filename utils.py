@@ -30,25 +30,6 @@ def get_fixed_load(args):
         nodal_fixed_load[:, i] = pd.read_csv(os.path.join(files_path, system_customers[i]))
     return nodal_fixed_load
 
-# def get_nodes_area(args, sce_sf_area_m2):
-#     # base on the config to get the nodes number and area
-#     if args.config == 0:
-#         num_nodes = 1
-#         irrigation_area_m2 = [0]
-#     elif args.config == 0.5:
-#         num_nodes, irrigation_area_m2 = read_irrigation_area(args)
-#         num_nodes = 1
-#         irrigation_area_m2 = [float(np.sum(irrigation_area_m2))]
-#     elif args.config == 1:
-#         num_nodes = 1
-#         irrigation_area_m2 = [sce_sf_area_m2]
-#     elif args.config == 2:
-#         num_nodes, irrigation_area_m2 = read_irrigation_area(args)
-#     elif args.config == 3 or args.config == 4:
-#         num_nodes, irrigation_area_m2 = read_irrigation_area(args)
-#         num_nodes = 1
-#         irrigation_area_m2 = [float(np.sum(irrigation_area_m2))]
-#     return num_nodes, irrigation_area_m2
 
 def annualization_rate(i, years):
     return (i*(1+i)**years)/((1+i)**years-1)
@@ -81,10 +62,6 @@ def load_timeseries(args, mod_level):
     fix_load_hourly_kw = np.array(pd.read_csv(f'{args.data_dir}/domestic_load_kw.csv', index_col=0))[:,0]
     return fix_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2
 
-# def read_irrigation_area(args):
-#     irrigation_area_m2 = pd.read_csv(os.path.join(args.data_dir, 'region_{}'.format(str(args.region_no)), 'pts_area.csv'))["AreaSqM"] * args.irrgation_area_ratio
-#     num_regions = len(irrigation_area_m2)
-#     return num_regions, irrigation_area_m2
 
 def get_connection_info(args):
     # transmission connection is pre-solved with TLND model
@@ -99,8 +76,34 @@ def get_connection_info(args):
 
 
 
+'''
+### There are some previously used functions, I put them below in case we will revisit it  ###
+##------------------------------------------------------------------------------------------##
 
+def read_irrigation_area(args):
+    irrigation_area_m2 = pd.read_csv(os.path.join(args.data_dir, 'region_{}'.format(str(args.region_no)), 'pts_area.csv'))["AreaSqM"] * args.irrgation_area_ratio
+    num_regions = len(irrigation_area_m2)
+    return num_regions, irrigation_area_m2
 
+def get_nodes_area(args, sce_sf_area_m2):
+    # base on the config to get the nodes number and area
+    if args.config == 0:
+        num_nodes = 1
+        irrigation_area_m2 = [0]
+    elif args.config == 0.5:
+        num_nodes, irrigation_area_m2 = read_irrigation_area(args)
+        num_nodes = 1
+        irrigation_area_m2 = [float(np.sum(irrigation_area_m2))]
+    elif args.config == 1:
+        num_nodes = 1
+        irrigation_area_m2 = [sce_sf_area_m2]
+    elif args.config == 2:
+        num_nodes, irrigation_area_m2 = read_irrigation_area(args)
+    elif args.config == 3 or args.config == 4:
+        num_nodes, irrigation_area_m2 = read_irrigation_area(args)
+        num_nodes = 1
+        irrigation_area_m2 = [float(np.sum(irrigation_area_m2))]
+    return num_nodes, irrigation_area_m2
 
 def dry_season_solar_ts(args, solar_po_hourly):
     solar_daily = np.add.reduceat(solar_po_hourly, np.arange(0, len(solar_po_hourly), 24))
@@ -148,3 +151,5 @@ def get_tx_tuples(args):
                                       tx_matrix_dist_m.iloc[i, j],
                                       tx_matrix_dist_m.iloc[i, j] * float(args.trans_loss)))
     return tx_tuple_list
+
+'''

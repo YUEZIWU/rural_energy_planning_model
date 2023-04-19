@@ -6,9 +6,9 @@ from utils import load_timeseries, get_cap_cost, get_nodal_inputs, get_connectio
 # both dry season 5-day model and annual model would use this nodes results function
 def node_results_retrieval(args, m, i, T, nodal_load_input, config):
     # prepared info inputs
-    if T == 216:
+    if T == args.num_hour_cap:
         dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="cap")
-    elif T == 2160:
+    elif T == args.num_hour_ope:
         dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
     if config == 1:
         dome_load = dome_load_hourly_kw * nodal_load_input["domestic_load_customers_no"][i]

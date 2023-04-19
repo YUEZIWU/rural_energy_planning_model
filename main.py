@@ -9,13 +9,19 @@ if __name__ == '__main__':
 
     args = get_args()
 
+    # this binary parameter is put here first; we may want to set a scenario with no flexibility.
     fixed_load_bi = False
 
-    config_list = [1,2] # 1 as stand alone, 2 as connected
+    ###  config  ###
+    # 1: each node will built stand-alone generation system with no connection;
+    # 2: all nodes are connected using TLND model, and then share one generation system
+    config_list = [2]
     for config in config_list:
-        scenario_name = "Test-" + str(config) + '-20230406-2'
+        # custom the output scenario name
+        scenario_name = "Test-" + str(config) + '-20230419'
         nodes_capacity_results = create_capacity_model(args, config)
         create_operation_model(args, nodes_capacity_results, scenario_name, config)
 
+    # showing the time used
     running_end_time = datetime.datetime.now()
     print(running_end_time - running_start_time)

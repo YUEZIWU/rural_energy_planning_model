@@ -1,6 +1,6 @@
 from gurobipy import *
 from utils import get_cap_cost, load_timeseries, get_nodal_inputs
-from results_processing import node_results_retrieval, system_ts_sum, get_irrigation_ts, process_results
+from results_processing import node_results_retrieval, system_ts_sum, process_results, get_irrigation_ts
 import numpy as np
 import pandas as pd
 import os
@@ -10,15 +10,15 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
     print("--------####################------------")
     T = args.num_hour_ope
     trange = range(T)
-    # config the connection
-    # num_nodes, irrigation_area_m2 = get_nodes_area(args, sce_sf_area_m2)
+    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
+    # Extract nodal load inputs
     nodal_load_input = get_nodal_inputs(args)
     if config == 1:
         num_nodes = len(nodal_load_input)
-    elif config == 2 or config == 3:
+    elif config == 2:
         num_nodes = 1
 
-    # retrieve the capacity model results
+    # retrieve the capacity model results; Fixed solar and battery capacities, and limit the diesel capacities.
     solar_cap_model = {}
     diesel_cap_model = {}
     battery_la_cap_kwh_model = {}
@@ -34,16 +34,16 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
         battery_li_cap_kw_model[i]  = round(nodes_capacity_results.batt_li_power_cap_kw[i],3)
         print('node',i,'solar:',solar_cap_model[i],'diesel',diesel_cap_model[i],'batt_la',battery_la_cap_kwh_model[i])
 
-    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
-    # get the capital price
-    solar_cap_cost, solar_single_cap_cost, battery_la_cap_cost_kwh, battery_li_cap_cost_kwh, battery_inverter_cap_cost_kw, \
-    diesel_cap_cost_kw = get_cap_cost(args, args.num_year_ope)
+    # Retrieve capital prices for solar, battery, and diesel generators
+    solar_cap_cost, solar_single_cap_cost, battery_la_cap_cost_kwh, battery_li_cap_cost_kwh, \
+    battery_inverter_cap_cost_kw, diesel_cap_cost_kw = get_cap_cost(args, args.num_year_ope)
 
-    # initial the results table
+    # initialize results table for storing the nodal generator capacities from operation model
     nodes_results = pd.DataFrame()
+    # specify the time series outputs array
     ts_results = np.zeros((T,11,num_nodes))
 
-    # set up regional model
+    # set up the nodal loop. Each iteration will calculate the capacities of each node.
     for i in range(num_nodes):
         m = Model("operation_model_node_" + str(i))
         print('operation model node ' + str(i) + ' building and solving')
@@ -56,54 +56,49 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
         elif config == 2:
             irrigation_area_m2 = np.sum(nodal_load_input["irrigation_area_ha"]) * 1e4
             dome_load = dome_load_hourly_kw * np.sum(nodal_load_input["domestic_load_customers_no"])
-            ### should be updated later ###
             com_power_full = np.array(nodal_load_input["com_power_kw"])
             com_peak_hours_full = np.array(nodal_load_input["com_wk_hours_per_day"])
             no_com_true = com_power_full * com_peak_hours_full
             com_power = com_power_full[no_com_true > 0]
             com_peak_hours = com_peak_hours_full[no_com_true > 0]
-        # elif config == 3:
         else:
             print("Error - wrong config")
 
-        irrigation_minimum_power = 0.5
-
-        # Initialize capacity variables / bind the capacity from the 1-level model
-        solar_cap = m.addVar(name='solar_cap') # obj=solar_single_cap_cost,
+        # Initialize capacity variables / bind the capacity from the capacity model
+        solar_cap = m.addVar(name='solar_cap')
         m.setPWLObj(solar_cap, args.solar_pw_cap_kw, solar_cap_cost)
         diesel_cap = m.addVar(obj=diesel_cap_cost_kw, name='diesel_cap')
+        diesel_binary = m.addVar(name='diesel_cap_binary', vtype=GRB.BINARY)
         battery_la_cap_kwh = m.addVar(obj=battery_la_cap_cost_kwh, name = 'batt_la_energy_cap')
         battery_la_cap_kw  = m.addVar(obj=battery_inverter_cap_cost_kw, name = 'batt_la_power_cap')
         battery_li_cap_kwh = m.addVar(obj=battery_li_cap_cost_kwh, name = 'batt_li_energy_cap')
         battery_li_cap_kw  = m.addVar(obj=battery_inverter_cap_cost_kw, name = 'batt_li_power_cap')
 
-        # constrain from the capacity model
+        # constrains from the capacity model
         m.addConstr(solar_cap == solar_cap_model[i])
         if args.diesel_ava: # fix the battery capacity
             m.addConstr(diesel_cap >= diesel_cap_model[i])             # give a flexibility for diesel
-            m.addConstr(diesel_cap >= 0.5)
+            m.addConstr(diesel_cap - args.diesel_min_cap * diesel_binary >= 0)
+            m.addConstr(diesel_cap * (1 - diesel_binary) == 0)
             m.addConstr(battery_la_cap_kwh == battery_la_cap_kwh_model[i])
             m.addConstr(battery_la_cap_kw  == battery_la_cap_kw_model[i])
             m.addConstr(battery_li_cap_kwh == battery_li_cap_kwh_model[i])
             m.addConstr(battery_li_cap_kw  == battery_li_cap_kw_model[i])
         else: # give flexibility for battery
-            m.addConstr(diesel_cap      == diesel_cap_model[i])
+            m.addConstr(diesel_cap == diesel_cap_model[i])
             if args.battery_la_ava:
                 m.addConstr(battery_la_cap_kwh >= battery_la_cap_kwh_model[i])
                 m.addConstr(battery_la_cap_kw  >= battery_la_cap_kw_model[i])
             if args.battery_li_ava:
                 m.addConstr(battery_li_cap_kwh >= battery_li_cap_kwh_model[i])
                 m.addConstr(battery_li_cap_kw  >= battery_li_cap_kw_model[i])
-        # although no diesel allowed, but can be added as back-up in
-        # m.addConstr(diesel_cap - args.diesel_min_cap * diesel_binary >= 0)
-        # m.addConstr(diesel_cap * (1-diesel_binary) == 0)
 
         # Initialize time-series variables
         irrigation_load = m.addVars(trange, obj=args.irrigation_nominal_cost, name = 'irrigation_load')
         irrigation_binary = m.addVars(trange, vtype=GRB.BINARY, name = "irrigation_binary")
-        solar_util      = m.addVars(trange, name = 'solar_util')
-
         com_load = m.addVars(trange, obj=args.com_nominal_cost, name = 'commercial_load')
+
+        solar_util      = m.addVars(trange, name = 'solar_util')
 
         battery_la_charge     = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_la_charge')
         battery_la_discharge  = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_la_discharge')
@@ -118,10 +113,10 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
 
         # Add time-series Constraints
         for j in trange:
-
             # solar and diesel generation constraint
             m.addConstr(diesel_gen[j] <= diesel_cap)
-            m.addConstr(solar_util[j] <= solar_cap * round(solar_po_hourly[j], 3))
+            # round the number to reduce the minimum decimals
+            m.addConstr(solar_util[j] <= solar_cap * round(solar_po_hourly[j], 4))
 
             # Energy Balance
             m.addConstr(solar_util[j] + diesel_gen[j] - battery_la_charge[j] + battery_la_discharge[j] - \
@@ -152,7 +147,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
                             battery_li_level[j - 1] - battery_li_level[j])
 
             # make irrigation operation more reasonable by adding lowest power: 1kW
-            m.addConstr(irrigation_load[j] >= float(irrigation_minimum_power) * irrigation_binary[j])
+            m.addConstr(irrigation_load[j] >= float(args.irrigation_minimum_power) * irrigation_binary[j])
             m.addConstr(irrigation_load[j] <= float(args.irrigation_maximum_power) * irrigation_binary[j])
         m.update()
 
@@ -166,12 +161,11 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
         m.update()
 
         if irrigation_area_m2 > 0:
-            m.addConstr(ground_water_level_mm[args.first_season_start] == 0)
-            m.addConstr(ground_water_level_mm[args.second_season_start] == 0)
-            for d in list(range(args.first_season_start, args.first_season_end+1)) + \
-                     list(range(args.second_season_start, args.second_season_end+1)):
-                # no irrigation hours
-                # if round(nodes_capacity_results.batt_la_power_cap_kw[i],1) == 0:
+            m.addConstr(ground_water_level_mm[args.ope_model_1_season_start] == 0)
+            m.addConstr(ground_water_level_mm[args.ope_model_2_season_start] == 0)
+            for d in list(range(args.ope_model_1_season_start, args.ope_model_1_season_end+1)) + \
+                     list(range(args.ope_model_2_season_start, args.ope_model_1_season_end+1)):
+                # limit the hours of irrigation.
                 m.addConstr(quicksum(irrigation_load[k] for k in [x+d*24 for x in args.no_irrigation_hours]) == 0)
 
                 irrigation_daily_mm = quicksum(irrigation_load[k] for k in range((d*24), ((d+1)*24))) / \
@@ -183,8 +177,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
                 m.addConstr(ground_water_level_mm[d+1] <= (args.water_account_days-1) * args.water_demand_kg_m2_day)
                 m.addConstr(ground_water_discharge_mm[d] <= args.water_demand_kg_m2_day)
 
-            for d in list(range(args.first_season_end+1, args.second_season_start)) + \
-                     list(range(args.second_season_end+1, int(T/24))):
+            for d in list(range(args.ope_model_3_season_start, args.ope_model_3_season_end+1)):
                 irrigation_daily_mm = quicksum(irrigation_load[k] for k in range((d*24), ((d+1)*24))) / \
                                       args.irrigation_kwh_p_kg / irrigation_area_m2
                 m.addConstr(irrigation_daily_mm == 0)
@@ -201,10 +194,10 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
                 m.addConstr(ground_water_discharge_mm[d] == 0)
         m.update()
 
-        # Commercial load constraint / initiate variable for each machine
+        # Commercial load constraint / initialize variables for each commercial load
         for m_num in range(len(com_power)):
+            # binary variable indicating the machine turn on or off
             com_load_binary = m.addVars(trange, vtype=GRB.BINARY, name = f"com_load_binary_{m_num}")
-            # set the daily operation hours
             for d in day_range:
                 com_hours_daily = quicksum(com_load_binary[k] for k in range((d*24), ((d+1)*24)))
                 m.addConstr(com_hours_daily == com_peak_hours[m_num])
@@ -231,9 +224,6 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
         m.optimize()
 
         ### ------------------------- Results Output ------------------------- ###
-        # Retrieve the model solution
-        allvars = m.getVars()
-
         # Process the model solution
         single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config)
         nodes_results = nodes_results.append(single_node_results)
