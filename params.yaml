@@ -4,7 +4,8 @@ fixed_load_dir: 'fixed_load_ts'
 results_dir: './model_results'
 
 # region number
-region_no: 0 # select the sample regions with different inputs
+#region_no: 0 # select the sample regions with different inputs
+solar_region: 'arua'
 # scenario binary & technology availability
 diesel_vali_cond: False
 solar_ava: True
@@ -34,7 +35,7 @@ solar_pw_cost_kw: [0,6680,11450,44550,183e3,573e3, 1146e3]
 solar_single_cost_kw: 1000
 annualize_years_solar: 15
 solar_min_cap: 0.2
-#solar_ds_perc: 0.50
+solar__perc: 0.50
 
 # Battery. lc: lead-acid; li: li-ion.
 battery_la_cost_kwh: 181
@@ -62,7 +63,7 @@ reserve_req: 1          # ignore the reserve capacity
 diesel_eff: 0.3
 annualize_years_diesel: 10
 
-# transmission
+# distribution
 dist_lv_cost_m: 10 #8.45
 dist_mv_cost_m: 25 #16
 annualize_years_dist: 15
@@ -92,7 +93,7 @@ ope_model_2_season_end:   59
 ope_model_3_season_start: 60
 ope_model_3_season_end:   89
 no_irrigation_hours: [0,1,2,3,21,22,23]  # during these hours, there are no irrigation local time 8:30pm-3:30am
-water_demand_kg_m2_day: 7  # 7 mm / m2*day
+water_demand_kg_m2_day: 7  # 7 mm / day
 water_account_days: 3   # any 3-day period, water should be enough
 irrigation_kwh_p_kg: 0.000227
 

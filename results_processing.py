@@ -63,15 +63,15 @@ def get_irrigation_ts(args, m, day_start, day_end):
     return irrigation_daily_ts_results
 
 ### --- this function would only be used by annul model --- ###
-def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config):
+def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out):
 
     # Retrieve necessary model parameters
     T = args.num_hour_ope
     #num_nodes, irrigation_area_m2 = get_nodes_area(args, sce_sf_area_m2)
     dome_load_hourly_kw, solar_pot_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
-    lv_connect_len, mv_connect_len, tx_num, meter_num, total_tx_cost = tx_results(args, config)
+    lv_connect_len, mv_connect_len, tx_num, meter_num, total_tx_cost = connection_results(args, config, lan_tlnd_out)
 
-    nodal_load_input = get_nodal_inputs(args)
+    nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)
     if config == 1:
         num_nodes = len(nodal_load_input)
     elif config == 2 or config == 3:
@@ -154,12 +154,12 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     return data_for_export
 
 
-def tx_results(args, config):
+def connection_results(args, config, lan_tlnd_out):
     # connection wire
     if config == 1:
         lv_connect_len, mv_connect_len, tx_num, meter_num = 0, 0, 0, 0
     elif config >= 2:
-        lv_connect_len, mv_connect_len, tx_num, meter_num = get_connection_info(args)
+        lv_connect_len, mv_connect_len, tx_num, meter_num = get_connection_info(lan_tlnd_out)
     else:
         lv_connect_len, mv_connect_len, tx_num, meter_num = 0, 0, 0, 0
 

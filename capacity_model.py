@@ -4,7 +4,7 @@ from results_processing import node_results_retrieval
 import numpy as np
 import pandas as pd
 
-def create_capacity_model(args, config):
+def create_capacity_model(args, config, lan_tlnd_out):
     print("capacity model building and solving")
     print("--------####################------------")
     # Load timeseries data
@@ -12,7 +12,7 @@ def create_capacity_model(args, config):
     trange = range(T)
     dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="cap")
     # Extract nodal load inputs
-    nodal_load_input = get_nodal_inputs(args)
+    nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)
     if config == 1:
         num_nodes = len(nodal_load_input)
     elif config == 2:

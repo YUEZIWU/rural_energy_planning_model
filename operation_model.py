@@ -5,14 +5,14 @@ import numpy as np
 import pandas as pd
 import os
 
-def create_operation_model(args, nodes_capacity_results, scenario_name, config):
+def create_operation_model(args, nodes_capacity_results, scenario_name, config, lan_tlnd_out):
     print("operation model building and solving")
     print("--------####################------------")
     T = args.num_hour_ope
     trange = range(T)
     dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
     # Extract nodal load inputs
-    nodal_load_input = get_nodal_inputs(args)
+    nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)
     if config == 1:
         num_nodes = len(nodal_load_input)
     elif config == 2:
@@ -244,7 +244,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config):
 
     #irrigation_daily_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'irrigation_ts.csv'))
 
-    processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config)
+    processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out)
     processed_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'processed_results.csv'))
 
     return None
