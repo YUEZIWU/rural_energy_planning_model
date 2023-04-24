@@ -19,7 +19,6 @@ def get_args():
     return args
 
 def get_nodal_inputs(args, lan_tlnd_out):
-    nodal_load_input   = pd.read_excel(f'{args.data_dir}/nodes_pue_irri_inputs.xlsx')
     pue_num = lan_tlnd_out.NumPUE
     nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num]+ [0]*(pue_num-1),
                                      "irrigation_area_ha": [0]*pue_num,
