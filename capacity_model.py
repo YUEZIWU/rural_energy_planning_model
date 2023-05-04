@@ -3,6 +3,7 @@ from utils import get_cap_cost, load_timeseries, get_nodal_inputs
 from results_processing import node_results_retrieval
 import numpy as np
 import pandas as pd
+import time
 
 def create_capacity_model(args, config, lan_tlnd_out):
     print("capacity model building and solving")
@@ -29,7 +30,6 @@ def create_capacity_model(args, config, lan_tlnd_out):
     for i in range(num_nodes):
         m = Model("capacity_model_node_" + str(i))
         print('capacity model node ' + str(i) + ' building and solving')
-
         # Define nodal loads (dome, irri, comm)
         # the commercial load is a array to store each locations load.
         # remove all locations without commercial load.
@@ -214,6 +214,8 @@ def create_capacity_model(args, config, lan_tlnd_out):
         m.setParam("FeasibilityTol", args.feasibility_tol)
         m.setParam("OptimalityTol",  args.optimality_tol)
         m.setParam("Method",         args.solver_method)
+        m.setParam("TimeLimit", 10.0)
+        m.setParam("OutputFlag", 1)
         # Solve the model
         m.optimize()
 

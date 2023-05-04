@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 
-def create_operation_model(args, nodes_capacity_results, scenario_name, config, lan_tlnd_out):
+def create_operation_model(args, nodes_capacity_results, scenario_name, config, lan_tlnd_out, scenario_start_time):
     print("operation model building and solving")
     print("--------####################------------")
     T = args.num_hour_ope
@@ -220,6 +220,8 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
         m.setParam("FeasibilityTol", args.feasibility_tol)
         m.setParam("OptimalityTol",  args.optimality_tol)
         m.setParam("Method",         args.solver_method)
+        m.setParam("TimeLimit", 10.0)
+        m.setParam("OutputFlag", 1)
         # Solve the model
         m.optimize()
 
@@ -244,7 +246,8 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
 
     #irrigation_daily_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'irrigation_ts.csv'))
 
-    processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out)
+    processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results,
+                                        config, lan_tlnd_out, scenario_start_time)
     processed_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'processed_results.csv'))
 
     return None

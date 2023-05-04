@@ -77,6 +77,8 @@ def get_connection_info(lan_tlnd_out):
     lv_length = lan_tlnd_out.LVLength
     mv_length = lan_tlnd_out.MVLength
     tx_num = lan_tlnd_out["Num Transformers"]
+    if mv_length==0:
+        tx_num = 0
     meter_num = lan_tlnd_out["NumStructures"]
     # lv_length = float(re.search(r'LVLength:(.*?)\n',tx_f).group(1))
     # mv_length = float(re.search(r'MVLength:(.*?)\n',tx_f).group(1))

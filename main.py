@@ -4,6 +4,7 @@ from operation_model import create_operation_model
 from utils import get_args
 import datetime
 import pandas as pd
+import os
 
 if __name__ == '__main__':
 
@@ -24,10 +25,16 @@ if __name__ == '__main__':
         config_list = [2]
         for config in config_list:
             # custom the output scenario name
-            scenario_name = "LAN_" + str(row.UUID) + "_config_" + str(config)
-            nodes_capacity_results = create_capacity_model(args, config, row)
-            create_operation_model(args, nodes_capacity_results, scenario_name, config, row)
-
+            scenario_start_time = datetime.datetime.now()
+            scenario_name = f"LAN_{row.UUID}_{row.Radius}m_config_{config}_10s_limit"
+            if os.path.exists(os.path.join(args.results_dir, scenario_name)):
+                print(f"LAN {row.UUID} was already calculated, to rerun, delete the directory.")
+                continue
+            try:
+                nodes_capacity_results = create_capacity_model(args, config, row)
+                create_operation_model(args, nodes_capacity_results, scenario_name, config, row, scenario_start_time)
+            except AttributeError:
+                print(f"#### Error in LAN {row.UUID}")
     # showing the time used
     running_end_time = datetime.datetime.now()
     print(running_end_time - running_start_time)

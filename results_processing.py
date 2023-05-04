@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from utils import load_timeseries, get_cap_cost, get_nodal_inputs, get_connection_info, annualization_rate
+import datetime
 
 # both dry season 5-day model and annual model would use this nodes results function
 def node_results_retrieval(args, m, i, T, nodal_load_input, config):
@@ -63,7 +64,7 @@ def get_irrigation_ts(args, m, day_start, day_end):
     return irrigation_daily_ts_results
 
 ### --- this function would only be used by annul model --- ###
-def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out):
+def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out, scenario_start_time):
 
     # Retrieve necessary model parameters
     T = args.num_hour_ope
@@ -150,6 +151,9 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     data_for_export['electricity_cost'] = [total_elec_cost]
 
     data_for_export['LCOE'] = [total_elec_cost / (T*avg_total_demand)]
+
+    scenario_end_time = datetime.datetime.now()
+    data_for_export['running_time'] = [scenario_end_time - scenario_start_time]
 
     return data_for_export
 
