@@ -11,7 +11,8 @@ def create_capacity_model(args, config, lan_tlnd_out):
     # Load timeseries data
     T = args.num_hour_cap
     trange = range(T)
-    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="cap")
+    solar_region = lan_tlnd_out["DistName"].lower()
+    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, solar_region, mod_level="cap")
     # Extract nodal load inputs
     nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)
     if config == 1:
@@ -222,7 +223,7 @@ def create_capacity_model(args, config, lan_tlnd_out):
         ### ------------------------- Results Output ------------------------- ###
 
         # Retrieve results and process the model solution for next step
-        single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config)
+        single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region)
         nodes_results = nodes_results.append(single_node_results)
     nodes_results = nodes_results.reset_index(drop=True)
 
