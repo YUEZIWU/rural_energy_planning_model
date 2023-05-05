@@ -1,11 +1,10 @@
 # Model run parameters
 data_dir: './data_uploads'
 fixed_load_dir: 'fixed_load_ts'
-results_dir: './model_results/model_results_10s'
+results_dir: './model_results'
 
 # region number
 #region_no: 0 # select the sample regions with different inputs
-solar_region: 'arua'
 # scenario binary & technology availability
 diesel_vali_cond: False
 solar_ava: True

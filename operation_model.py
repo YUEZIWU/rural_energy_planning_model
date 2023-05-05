@@ -1,6 +1,6 @@
 from gurobipy import *
 from utils import get_cap_cost, load_timeseries, get_nodal_inputs
-from results_processing import node_results_retrieval, system_ts_sum, process_results, get_irrigation_ts
+from results_processing import node_results_retrieval, system_ts_sum, process_results
 import numpy as np
 import pandas as pd
 import os
@@ -10,7 +10,8 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
     print("--------####################------------")
     T = args.num_hour_ope
     trange = range(T)
-    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
+    solar_region = lan_tlnd_out.DistName.lower()
+    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, solar_region, mod_level="ope")
     # Extract nodal load inputs
     nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)
     if config == 1:
@@ -227,7 +228,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
 
         ### ------------------------- Results Output ------------------------- ###
         # Process the model solution
-        single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config)
+        single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region)
         nodes_results = nodes_results.append(single_node_results)
         nodes_results = nodes_results.reset_index(drop=True)
         ts_results[:,:,i] = single_node_ts_results

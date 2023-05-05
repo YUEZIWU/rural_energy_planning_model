@@ -5,12 +5,12 @@ from utils import load_timeseries, get_cap_cost, get_nodal_inputs, get_connectio
 import datetime
 
 # both dry season 5-day model and annual model would use this nodes results function
-def node_results_retrieval(args, m, i, T, nodal_load_input, config):
+def node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region):
     # prepared info inputs
     if T == args.num_hour_cap:
-        dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="cap")
+        dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, solar_region, mod_level="cap")
     elif T == args.num_hour_ope:
-        dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
+        dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, solar_region, mod_level="ope")
     if config == 1:
         dome_load = dome_load_hourly_kw * nodal_load_input["domestic_load_customers_no"][i]
     elif config == 2:
@@ -50,8 +50,9 @@ def system_ts_sum(ts_results):
     system_ts_df = pd.DataFrame(system_ts, columns=ts_col_names)
     return system_ts_df
 
-def get_irrigation_ts(args, m, day_start, day_end):
-    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level='ope')
+def get_irrigation_ts(args, m, day_start, day_end, region):
+    region = 'arua' # This is not correct; when going to add irrigation in the model, this should be modified!!!
+    dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, region, mod_level='ope')
     # get the daily irrigation time series
     daily_ts_ar = np.zeros(((day_end-day_start+1),4))
     daily_ts_ar[:,0] = rain_rate_daily_mm_m2[day_start:(day_end+1)]
@@ -68,8 +69,8 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
 
     # Retrieve necessary model parameters
     T = args.num_hour_ope
-    #num_nodes, irrigation_area_m2 = get_nodes_area(args, sce_sf_area_m2)
-    dome_load_hourly_kw, solar_pot_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, mod_level="ope")
+    solar_region = lan_tlnd_out.DistName.lower()
+    dome_load_hourly_kw, solar_pot_hourly, rain_rate_daily_mm_m2 = load_timeseries(args, solar_region, mod_level="ope")
     lv_connect_len, mv_connect_len, tx_num, meter_num, total_tx_cost = connection_results(args, config, lan_tlnd_out)
 
     nodal_load_input = get_nodal_inputs(args, lan_tlnd_out)

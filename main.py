@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # this binary parameter is put here first; we may want to set a scenario with no flexibility.
     fixed_load_bi = False
 
-    lans_tlnd_df = pd.read_csv(f"{args.data_dir}/sample_arua_lan_500_connection_info.csv")
+    lans_tlnd_df = pd.read_csv(f"{args.data_dir}/ten_uuid_examples.csv")
 
     for index, row in lans_tlnd_df.iterrows():
         print(f"No {index} LAN-{row.UUID} starting running")

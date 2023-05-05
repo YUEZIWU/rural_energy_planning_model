@@ -56,10 +56,10 @@ def get_cap_cost(args, years):
     return solar_cap_cost, solar_single_cap_cost, battery_la_cap_cost_kwh, battery_li_cap_cost_kwh, \
            battery_inverter_cap_cost_kw, diesel_cap_cost_kw
 
-def load_timeseries(args, mod_level):
+def load_timeseries(args, solar_region, mod_level):
     # Load solar & load time series, all region use the same
-    solar_po = pd.read_csv(f'{args.data_dir}/{args.solar_region}_solar_2019.csv', skiprows=10, nrows=8760)
-    solar_po = solar_po.iloc[:, 0:2]
+    solar_region = solar_region.lower()
+    solar_po = pd.read_csv(f'{args.data_dir}/uganda_solar_ts/{solar_region}_solar_2019.csv')
     solar_po_3m, solar_po_3d = get_rep_solar_po_ts(solar_po)
 
     if mod_level == "cap":
