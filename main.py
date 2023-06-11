@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # this binary parameter is put here first; we may want to set a scenario with no flexibility.
     fixed_load_bi = False
 
-    lans_tlnd_df = pd.read_csv(f"{args.data_dir}/ten_uuid_examples.csv")
+    lans_tlnd_df = pd.read_csv(f"{args.data_dir}/lans_inputs.csv")
 
     for index, row in lans_tlnd_df.iterrows():
         print(f"No {index} LAN-{row.UUID} starting running")
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         for config in config_list:
             # custom the output scenario name
             scenario_start_time = datetime.datetime.now()
-            scenario_name = f"LAN_{row.UUID}_{row.Radius}m_config_{config}_10s_limit"
+            scenario_name = f"LAN_{row.UUID}_{row.Radius}m_config_{config}_XXs_limit"
             if os.path.exists(os.path.join(args.results_dir, scenario_name)):
                 print(f"LAN {row.UUID} was already calculated, to rerun, delete the directory.")
                 continue

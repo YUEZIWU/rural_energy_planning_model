@@ -1,7 +1,7 @@
 # Model run parameters
 data_dir: './data_uploads'
 fixed_load_dir: 'fixed_load_ts'
-results_dir: './model_results'
+results_dir: './model_results/dist10'
 
 # region number
 #region_no: 0 # select the sample regions with different inputs
@@ -11,6 +11,10 @@ solar_ava: True
 battery_la_ava: True
 battery_li_ava: False
 diesel_ava: True
+
+# time limits [s]
+capacity_model_time_limit: 60
+operation_model_time_limit: 60
 
 # general model assumptions
 irrgation_area_ratio: 1

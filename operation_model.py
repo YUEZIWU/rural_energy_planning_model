@@ -221,7 +221,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
         m.setParam("FeasibilityTol", args.feasibility_tol)
         m.setParam("OptimalityTol",  args.optimality_tol)
         m.setParam("Method",         args.solver_method)
-        m.setParam("TimeLimit", 10.0)
+        m.setParam("TimeLimit", args.operation_model_time_limit)
         m.setParam("OutputFlag", 1)
         # Solve the model
         m.optimize()

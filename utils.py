@@ -20,10 +20,16 @@ def get_args():
 
 def get_nodal_inputs(args, lan_tlnd_out):
     pue_num = lan_tlnd_out.NumPUE
-    nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num]+ [0]*(pue_num-1),
-                                     "irrigation_area_ha": [0]*pue_num,
-                                     "com_power_kw": [3]*pue_num,
-                                     "com_wk_hours_per_day": [5]*pue_num})
+    if pue_num > 0:
+        nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num]+ [0]*(pue_num-1),
+                                         "irrigation_area_ha": [0]*pue_num,
+                                         "com_power_kw": [3]*pue_num,
+                                         "com_wk_hours_per_day": [5]*pue_num})
+    else:
+        nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num],
+                                         "irrigation_area_ha": [0],
+                                         "com_power_kw": [0],
+                                         "com_wk_hours_per_day": [0]})
     return nodal_load_input
 
 def get_fixed_load(args):
