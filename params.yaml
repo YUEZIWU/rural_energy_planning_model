@@ -1,7 +1,7 @@
 # Model run parameters
 data_dir: './data_uploads'
 fixed_load_dir: 'fixed_load_ts'
-results_dir: './model_results/dist10'
+results_dir: './model_results'
 
 # region number
 #region_no: 0 # select the sample regions with different inputs
@@ -16,14 +16,17 @@ diesel_ava: True
 capacity_model_time_limit: 60
 operation_model_time_limit: 60
 
+# fixed load scenario
+fixed_load_sce: True
+
 # general model assumptions
 irrgation_area_ratio: 1
 num_year_cap: 0.024658
 num_year_ope: 0.246575
 num_hour_cap: 216
 num_hour_ope: 2160
-num_year_fixed_load: 1
-num_hour_fixed_load: 8760
+num_year_fixed_load: 0.246575
+num_hour_fixed_load: 2160
 i_rate: 0.128
 
 # farmer data

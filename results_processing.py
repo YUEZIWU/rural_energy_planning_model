@@ -87,6 +87,10 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
                            np.mean(system_ts_results.commercial_load_kw)
     peak_total_demand    = np.max(system_ts_results.domestic_load_kw + system_ts_results.irrigation_load_kw +
                                   system_ts_results.commercial_load_kw)
+    if args.fixed_load_sce:
+        avg_total_demand = avg_total_demand + np.mean(system_ts_results.fixed_load_kw)
+        peak_total_demand = np.max(system_ts_results.domestic_load_kw + system_ts_results.irrigation_load_kw +
+                                  system_ts_results.commercial_load_kw + system_ts_results.fixed_load_kw)
     avg_solar_gen        = np.mean(system_ts_results.solar_util_kw)
     avg_diesel_gen       = np.mean(system_ts_results.diesel_util_kw)
     avg_total_gen        = avg_solar_gen + avg_diesel_gen

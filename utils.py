@@ -33,13 +33,14 @@ def get_nodal_inputs(args, lan_tlnd_out):
     return nodal_load_input
 
 def get_fixed_load(args):
-    files_path = f'{args.data_dir}/{args.fixed_load_dir}'
-    system_customers = os.listdir(files_path)
-    system_customers = [f for f in system_customers if f.endswith('.csv')].sort()
-    nodal_fixed_load = np.zeros((args.num_hour_fixed_load, len(system_customers)))
-    for i in range(len(system_customers)):
-        nodal_fixed_load[:, i] = pd.read_csv(os.path.join(files_path, system_customers[i]))
-    return nodal_fixed_load
+    fixed_load = np.array(pd.read_csv(f'{args.data_dir}/{args.fixed_load_dir}/paloga_fixed_load.csv', index_col=0))[:, 0]
+    # files_path = f'{args.data_dir}/{args.fixed_load_dir}'
+    # system_customers = os.listdir(files_path)
+    # system_customers = [f for f in system_customers if f.endswith('.csv')].sort()
+    # nodal_fixed_load = np.zeros((args.num_hour_fixed_load, len(system_customers)))
+    # for i in range(len(system_customers)):
+    #     nodal_fixed_load[:, i] = pd.read_csv(os.path.join(files_path, system_customers[i]))
+    return fixed_load
 
 
 def annualization_rate(i, years):
@@ -74,8 +75,12 @@ def load_timeseries(args, solar_region, mod_level):
     if mod_level == "ope":
         solar_po_hourly = np.array(solar_po_3m)[:,0]
         rain_rate_daily_mm_m2 = np.array(pd.read_csv(f'{args.data_dir}/rain_rate_mm_2014_2015_3m.csv', index_col=0))[:,0]
-    fix_load_hourly_kw = np.array(pd.read_csv(f'{args.data_dir}/domestic_load_kw.csv', index_col=0))[:,0]
-    return fix_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2
+    if mod_level == "fixed_load":
+        solar_po_hourly = np.array(solar_po_3m)[:, 0]
+        rain_rate_daily_mm_m2 = np.array(pd.read_csv(f'{args.data_dir}/rain_rate_mm_2014_2015_3m.csv', index_col=0))[:,0]
+    dome_load_hourly_kw = np.array(pd.read_csv(f'{args.data_dir}/domestic_load_kw.csv', index_col=0))[:,0]
+
+    return dome_load_hourly_kw, solar_po_hourly, rain_rate_daily_mm_m2
 
 
 def get_connection_info(lan_tlnd_out):
@@ -124,8 +129,7 @@ def get_rep_solar_po_ts(solar_po):
     solar_po_s3 = solar_po[(solar_po.index >= pd.Timestamp("2019-12-01 00:00", tzinfo=pytz.timezone('Etc/GMT-3'))) &
                            (solar_po.index <= pd.Timestamp("2019-12-30 23:59", tzinfo=pytz.timezone('Etc/GMT-3')))]
 
-    solar_po_3m = solar_po_s1.append(solar_po_s2)
-    solar_po_3m = solar_po_3m.append(solar_po_s3)
+    solar_po_3m = pd.concat([solar_po_s1, solar_po_s2, solar_po_s3])
 
     medium_day = pickup_3d_solar_ts(0.5, solar_po_s1.solar_po)
     solar_po_s1_3d = solar_po_s1.iloc[(medium_day*24):(medium_day*24+72),:]
@@ -136,10 +140,7 @@ def get_rep_solar_po_ts(solar_po):
     medium_day = pickup_3d_solar_ts(0.5, solar_po_s3.solar_po)
     solar_po_s3_3d = solar_po_s3.iloc[(medium_day*24):(medium_day*24+72),:]
 
-    solar_po_3d = solar_po_s1_3d.append(solar_po_s2_3d)
-    solar_po_3d = solar_po_3d.append(solar_po_s3_3d)
-
-    print("solar_avg", solar_po_3m.mean()*24, solar_po_3d.mean()*24)
+    solar_po_3d = pd.concat([solar_po_s1_3d, solar_po_s2_3d, solar_po_s3_3d])
 
     return solar_po_3m, solar_po_3d
 
