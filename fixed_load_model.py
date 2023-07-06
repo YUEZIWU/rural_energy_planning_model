@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # for the fixed model, there is only
-def create_fix_load_model(args, scenario_name, config, lan_tlnd_out, scenario_start_time):
+def create_fix_load_model(args, scenario_name, config, lan_tlnd_out):
     print("fixed load model building and solving")
     print("--------####################------------")
     # Load timeseries data
@@ -65,6 +65,10 @@ def create_fix_load_model(args, scenario_name, config, lan_tlnd_out, scenario_st
             if args.diesel_vali_cond:
                 m.addConstr(diesel_binary == 1)
 
+        # fixed generation
+        # m.addConstr(solar_cap == 80)
+        # m.addConstr(battery_la_cap_kwh == 144)
+
         # battery capacity constraints
         m.addConstr(battery_la_cap_kwh * (1-args.battery_la_min_soc) * float(args.battery_la_p2e_ratio_range[0]) <=
                     battery_la_cap_kw)
@@ -77,8 +81,8 @@ def create_fix_load_model(args, scenario_name, config, lan_tlnd_out, scenario_st
         m.update()
 
         # Initialize time-series variables
-        solar_util      = m.addVars(trange, name = 'solar_util')
-        battery_la_charge    = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_la_charge')
+        solar_util = m.addVars(trange, name='solar_util')
+        battery_la_charge = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_la_charge')
         battery_la_discharge = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_la_discharge')
         battery_la_level     = m.addVars(trange, name='batt_la_level')
         battery_li_charge    = m.addVars(trange, obj = args.nominal_charge_discharge_cost_kwh,name= 'batt_li_charge')
@@ -162,8 +166,9 @@ def create_fix_load_model(args, scenario_name, config, lan_tlnd_out, scenario_st
     system_ts_results['fixed_load_kw'] = nodal_fixed_load
 
     nodes_capacity_results = pd.DataFrame({'diesel_cap_kw': [0]})
+    cap_solving_time, ope_solving_time = 0, 0
     processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results,
-                                        config, lan_tlnd_out, scenario_start_time)
+                                        config, lan_tlnd_out, cap_solving_time, ope_solving_time)
 
     nodes_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'raw_results.csv'))
     system_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'ts_results.csv'))

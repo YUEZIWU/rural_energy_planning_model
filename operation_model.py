@@ -4,8 +4,9 @@ from results_processing import node_results_retrieval, system_ts_sum, process_re
 import numpy as np
 import pandas as pd
 import os
+import datetime
 
-def create_operation_model(args, nodes_capacity_results, scenario_name, config, lan_tlnd_out, scenario_start_time):
+def create_operation_model(args, nodes_capacity_results, scenario_name, config, lan_tlnd_out, cap_solving_time):
     print("operation model building and solving")
     print("--------####################------------")
     T = args.num_hour_ope
@@ -76,8 +77,8 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
         battery_li_cap_kw  = m.addVar(obj=battery_inverter_cap_cost_kw, name = 'batt_li_power_cap')
 
         # constrains from the capacity model
-        m.addConstr(solar_cap == solar_cap_model[i])
         if args.diesel_ava: # fix the battery capacity
+            m.addConstr(solar_cap == solar_cap_model[i])
             m.addConstr(diesel_cap >= diesel_cap_model[i])             # give a flexibility for diesel
             m.addConstr(diesel_cap - args.diesel_min_cap * diesel_binary >= 0)
             m.addConstr(diesel_cap * (1 - diesel_binary) == 0)
@@ -86,13 +87,23 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
             m.addConstr(battery_li_cap_kwh == battery_li_cap_kwh_model[i])
             m.addConstr(battery_li_cap_kw  == battery_li_cap_kw_model[i])
         else: # give flexibility for battery
+            m.addConstr(solar_cap >= solar_cap_model[i])
             m.addConstr(diesel_cap == diesel_cap_model[i])
             if args.battery_la_ava:
                 m.addConstr(battery_la_cap_kwh >= battery_la_cap_kwh_model[i])
-                m.addConstr(battery_la_cap_kw  >= battery_la_cap_kw_model[i])
+                m.addConstr(battery_la_cap_kw >= battery_la_cap_kw_model[i])
+                m.addConstr(battery_la_cap_kwh * (1 - args.battery_la_min_soc) * float(args.battery_la_p2e_ratio_range[0]) <= battery_la_cap_kw)
+                m.addConstr(battery_la_cap_kwh * (1 - args.battery_la_min_soc) * float(args.battery_la_p2e_ratio_range[1]) >= battery_la_cap_kw)
+            else:
+                m.addConstr(battery_la_cap_kwh == 0)
             if args.battery_li_ava:
                 m.addConstr(battery_li_cap_kwh >= battery_li_cap_kwh_model[i])
-                m.addConstr(battery_li_cap_kw  >= battery_li_cap_kw_model[i])
+                m.addConstr(battery_li_cap_kw >= battery_li_cap_kw_model[i])
+                m.addConstr(battery_li_cap_kwh * (1 - args.battery_li_min_soc) * float(args.battery_li_p2e_ratio_range[0]) <= battery_li_cap_kw)
+                m.addConstr(battery_li_cap_kwh * (1 - args.battery_li_min_soc) * float(args.battery_li_p2e_ratio_range[1]) >= battery_li_cap_kw)
+            else:
+                m.addConstr(battery_li_cap_kwh == 0)
+
 
         # Initialize time-series variables
         irrigation_load = m.addVars(trange, obj=args.irrigation_nominal_cost, name = 'irrigation_load')
@@ -165,7 +176,7 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
             m.addConstr(ground_water_level_mm[args.ope_model_1_season_start] == 0)
             m.addConstr(ground_water_level_mm[args.ope_model_2_season_start] == 0)
             for d in list(range(args.ope_model_1_season_start, args.ope_model_1_season_end+1)) + \
-                     list(range(args.ope_model_2_season_start, args.ope_model_1_season_end+1)):
+                     list(range(args.ope_model_2_season_start, args.ope_model_2_season_end+1)):
                 # limit the hours of irrigation.
                 m.addConstr(quicksum(irrigation_load[k] for k in [x+d*24 for x in args.no_irrigation_hours]) == 0)
 
@@ -199,10 +210,18 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
         for m_num in range(len(com_power)):
             # binary variable indicating the machine turn on or off
             com_load_binary = m.addVars(trange, vtype=GRB.BINARY, name = f"com_load_binary_{m_num}")
-            for d in day_range:
-                com_hours_daily = quicksum(com_load_binary[k] for k in range((d*24), ((d+1)*24)))
+
+            for d in list(range(args.ope_model_1_season_start, args.ope_model_1_season_end + 1)) + \
+                     list(range(args.ope_model_2_season_start, args.ope_model_2_season_end + 1)):
+                com_hours_daily = quicksum(com_load_binary[k] for k in range((d * 24), ((d + 1) * 24)))
                 m.addConstr(com_hours_daily == com_peak_hours[m_num])
-                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x+d*24 for x in args.no_com_hours])
+                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x + d * 24 for x in args.no_com_hours])
+                m.addConstr(com_closed_hours_sum == 0)
+
+            for d in list(range(args.ope_model_3_season_start, args.ope_model_3_season_end + 1)):
+                com_hours_daily = quicksum(com_load_binary[k] for k in range((d * 24), ((d + 1) * 24)))
+                m.addConstr(com_hours_daily == com_peak_hours[m_num])
+                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x + d * 24 for x in args.no_com_hours])
                 m.addConstr(com_closed_hours_sum == 0)
         m.update()
 
@@ -224,12 +243,14 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
         m.setParam("TimeLimit", args.operation_model_time_limit)
         m.setParam("OutputFlag", 1)
         # Solve the model
+        ope_start_solving_time = datetime.datetime.now()
         m.optimize()
+        ope_solving_time = datetime.datetime.now() - ope_start_solving_time
 
         ### ------------------------- Results Output ------------------------- ###
         # Process the model solution
         single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region)
-        nodes_results = nodes_results.append(single_node_results)
+        nodes_results = pd.concat([nodes_results, single_node_results])
         nodes_results = nodes_results.reset_index(drop=True)
         ts_results[:,:,i] = single_node_ts_results
 
@@ -240,15 +261,14 @@ def create_operation_model(args, nodes_capacity_results, scenario_name, config, 
     scenario_dir = scenario_name
     if not os.path.exists(os.path.join(args.results_dir, scenario_dir)):
         os.makedirs(os.path.join(args.results_dir, scenario_dir))
-    nodes_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'raw_results.csv'))
-
     system_ts_results = system_ts_sum(ts_results)
-    system_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'ts_results.csv'))
-
     #irrigation_daily_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'irrigation_ts.csv'))
 
     processed_results = process_results(args, nodes_results, system_ts_results, nodes_capacity_results,
-                                        config, lan_tlnd_out, scenario_start_time)
+                                        config, lan_tlnd_out, cap_solving_time, ope_solving_time)
+
+    nodes_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_dir, 'raw_results.csv'))
+    system_ts_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'ts_results.csv'))
     processed_results.round(decimals=3).to_csv(os.path.join(args.results_dir, scenario_name, 'processed_results.csv'))
 
     return None

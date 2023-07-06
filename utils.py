@@ -23,8 +23,8 @@ def get_nodal_inputs(args, lan_tlnd_out):
     if pue_num > 0:
         nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num]+ [0]*(pue_num-1),
                                          "irrigation_area_ha": [0]*pue_num,
-                                         "com_power_kw": [3]*pue_num,
-                                         "com_wk_hours_per_day": [5]*pue_num})
+                                         "com_power_kw": [args.com_power_kw]*pue_num,
+                                         "com_wk_hours_per_day": [args.com_wk_hours_per_day]*pue_num})
     else:
         nodal_load_input = pd.DataFrame({"domestic_load_customers_no": [lan_tlnd_out.NumStructures-pue_num],
                                          "irrigation_area_ha": [0],

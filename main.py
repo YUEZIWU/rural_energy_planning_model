@@ -22,21 +22,20 @@ if __name__ == '__main__':
         config_list = [2]
         for config in config_list:
             # custom the output scenario name
-            scenario_start_time = datetime.datetime.now()
 
-            scenario_name = f"LAN_{row.UUID}_{row.Radius}m_config_{config}_xxs_limit"
+            scenario_name = f"LAN_{row.UUID}_{row.Radius}m_config_{config}_fixed_load_sb"
             if os.path.exists(os.path.join(args.results_dir, scenario_name)):
                 print(f"LAN {row.UUID} was already calculated, to rerun, delete the directory.")
                 continue
 
             if args.fixed_load_sce:
-                create_fix_load_model(args, scenario_name, config, row, scenario_start_time)
+                create_fix_load_model(args, scenario_name, config, row)
             else:
-                try:
-                    nodes_capacity_results = create_capacity_model(args, config, row)
-                    create_operation_model(args, nodes_capacity_results, scenario_name, config, row, scenario_start_time)
-                except AttributeError:
-                    print(f"#### Error in LAN {row.UUID}")
+                #try:
+                nodes_capacity_results, cap_solving_time = create_capacity_model(args, config, row)
+                create_operation_model(args, nodes_capacity_results, scenario_name, config, row, cap_solving_time)
+                # except AttributeError:
+                #     print(f"#### Error in LAN {row.UUID}")
     # showing the time used
     running_end_time = datetime.datetime.now()
     print(running_end_time - running_start_time)

@@ -21,9 +21,9 @@ def node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region
     node_df['solar_cap_kw'] = [m.getVarByName('solar_cap').X]
     node_df['diesel_cap_kw'] = [m.getVarByName('diesel_cap').X]
     node_df['batt_la_energy_cap_kwh'] = [m.getVarByName('batt_la_energy_cap').X]
-    node_df['batt_la_power_cap_kw']   = [m.getVarByName('batt_la_power_cap').X]
+    node_df['batt_la_power_cap_kw'] = [m.getVarByName('batt_la_power_cap').X]
     node_df['batt_li_energy_cap_kwh'] = [m.getVarByName('batt_li_energy_cap').X]
-    node_df['batt_li_power_cap_kw']   = [m.getVarByName('batt_li_power_cap').X]
+    node_df['batt_li_power_cap_kw'] = [m.getVarByName('batt_li_power_cap').X]
 
     node_ts_ar = np.zeros((T,11))
     for j in range(T):
@@ -65,7 +65,8 @@ def get_irrigation_ts(args, m, day_start, day_end, region):
     return irrigation_daily_ts_results
 
 ### --- this function would only be used by annul model --- ###
-def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out, scenario_start_time):
+def process_results(args, nodes_results, system_ts_results, nodes_capacity_results, config, lan_tlnd_out,
+                    cap_solving_time, ope_solving_time):
 
     # Retrieve necessary model parameters
     T = args.num_hour_ope
@@ -90,12 +91,12 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     if args.fixed_load_sce:
         avg_total_demand = avg_total_demand + np.mean(system_ts_results.fixed_load_kw)
         peak_total_demand = np.max(system_ts_results.domestic_load_kw + system_ts_results.irrigation_load_kw +
-                                  system_ts_results.commercial_load_kw + system_ts_results.fixed_load_kw)
-    avg_solar_gen        = np.mean(system_ts_results.solar_util_kw)
-    avg_diesel_gen       = np.mean(system_ts_results.diesel_util_kw)
-    avg_total_gen        = avg_solar_gen + avg_diesel_gen
+                                   system_ts_results.commercial_load_kw + system_ts_results.fixed_load_kw)
+    avg_solar_gen = np.mean(system_ts_results.solar_util_kw)
+    avg_diesel_gen = np.mean(system_ts_results.diesel_util_kw)
+    avg_total_gen = avg_solar_gen + avg_diesel_gen
     solar_uncurtailed_cf = np.mean(solar_pot_hourly)
-    solar_actual_cf      = avg_solar_gen / np.sum(nodes_results.solar_cap_kw)
+    solar_actual_cf = avg_solar_gen / np.sum(nodes_results.solar_cap_kw)
 
     # total capital cost and operation cost
     solar_cap_cost, solar_single_cap_cost, battery_la_cap_cost_kwh, battery_li_cap_cost_kwh, \
@@ -158,7 +159,9 @@ def process_results(args, nodes_results, system_ts_results, nodes_capacity_resul
     data_for_export['LCOE'] = [total_elec_cost / (T*avg_total_demand)]
 
     scenario_end_time = datetime.datetime.now()
-    data_for_export['running_time'] = [scenario_end_time - scenario_start_time]
+    # this is only valid for one node scenario
+    data_for_export['cap_running_time'] = [cap_solving_time]
+    data_for_export['ope_running_time'] = [ope_solving_time]
 
     return data_for_export
 

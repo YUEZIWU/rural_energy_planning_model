@@ -3,7 +3,7 @@ from utils import get_cap_cost, load_timeseries, get_nodal_inputs
 from results_processing import node_results_retrieval
 import numpy as np
 import pandas as pd
-import time
+import datetime
 
 def create_capacity_model(args, config, lan_tlnd_out):
     print("capacity model building and solving")
@@ -193,10 +193,18 @@ def create_capacity_model(args, config, lan_tlnd_out):
         for m_num in range(len(com_power)):
             # binary variable indicating the machine turn on or off
             com_load_binary = m.addVars(trange, vtype=GRB.BINARY, name = f"com_load_binary_{m_num}")
-            for d in day_range:
-                com_hours_daily = quicksum(com_load_binary[k] for k in range((d*24), ((d+1)*24)))
+
+            for d in list(range(args.cap_model_1_season_start, args.cap_model_1_season_end + 1)) + \
+                     list(range(args.cap_model_2_season_start, args.cap_model_2_season_end + 1)):
+                com_hours_daily = quicksum(com_load_binary[k] for k in range((d * 24), ((d + 1) * 24)))
                 m.addConstr(com_hours_daily == com_peak_hours[m_num])
-                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x+d*24 for x in args.no_com_hours])
+                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x + d * 24 for x in args.no_com_hours])
+                m.addConstr(com_closed_hours_sum == 0)
+
+            for d in list(range(args.cap_model_3_season_start, args.cap_model_3_season_end+1)):
+                com_hours_daily = quicksum(com_load_binary[k] for k in range((d * 24), ((d + 1) * 24)))
+                m.addConstr(com_hours_daily == com_peak_hours[m_num])
+                com_closed_hours_sum = quicksum(com_load_binary[k] for k in [x + d * 24 for x in args.no_com_hours])
                 m.addConstr(com_closed_hours_sum == 0)
         m.update()
 
@@ -218,14 +226,15 @@ def create_capacity_model(args, config, lan_tlnd_out):
         m.setParam("TimeLimit", args.capacity_model_time_limit)
         m.setParam("OutputFlag", 1)
         # Solve the model
-
+        cap_start_solving_time = datetime.datetime.now()
         m.optimize()
+        cap_solving_time = datetime.datetime.now() - cap_start_solving_time
 
         ### ------------------------- Results Output ------------------------- ###
 
         # Retrieve results and process the model solution for next step
         single_node_results, single_node_ts_results = node_results_retrieval(args, m, i, T, nodal_load_input, config, solar_region)
-        nodes_results = nodes_results.append(single_node_results)
+        nodes_results = pd.concat([nodes_results, single_node_results])
     nodes_results = nodes_results.reset_index(drop=True)
 
-    return nodes_results
+    return nodes_results, cap_solving_time
